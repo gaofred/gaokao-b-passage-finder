@@ -31,14 +31,27 @@ def check_references() -> None:
     下游的规范文件（如 gaokao-b-reading-generator 的 adaptation_spec.md）。
     """
     text = (ROOT / "SKILL.md").read_text(encoding="utf-8")
-    cited = set(re.findall(r"(?:references|scripts)/[A-Za-z0-9_\-]+\.(?:md|py|json)", text))
-    for rel in sorted(cited):
+    pattern = re.compile(r"(?:references|scripts)/[A-Za-z0-9_\-]+\.(?:md|py|json)")
+    # 「`某 skill` 的 `references/x.md`」是跨 skill 引用，本仓库不必有该文件
+    # 两种写法：`某 skill` 的 `references/x.md`，或 某 skill/references/x.md
+    external_hint = re.compile(r"(?:`[A-Za-z0-9_\-]+`\s*的\s*`|[A-Za-z0-9_\-]{3,}/)\s*$")
+
+    seen: set[str] = set()
+    for match in pattern.finditer(text):
+        rel = match.group(0)
+        if rel in seen:
+            continue
+        seen.add(rel)
         if (ROOT / rel).exists():
             check(True, f"本地存在：{rel}")
             continue
+        before = text[max(0, match.start() - 60):match.start()]
+        if external_hint.search(before):
+            print(f"  info 跨 skill 引用（不在本仓库）：{rel}")
+            continue
         elsewhere = sorted(ROOT.parent.glob(f"*/{rel}"))
         if elsewhere:
-            print(f"  info 跨 skill 引用：{rel} → {elsewhere[0].parent.parent.name}")
+            print(f"  info 同级 skill 中找到：{rel} → {elsewhere[0].parent.parent.name}")
             continue
         check(False, f"引用无法解析：{rel}")
 
