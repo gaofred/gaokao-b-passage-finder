@@ -1,0 +1,16 @@
+# macOS
+.DS_Store
+
+# 本地版本备份（不随仓库分发）
+*.bak.*
+*.bak
+
+# Python
+__pycache__/
+*.py[cod]
+
+# 运行产出
+out/
+out_*/
+*_B篇语篇/
+*.docx
